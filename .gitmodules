@@ -1,0 +1,9 @@
+[submodule "backend"]
+	path = backend
+	url = https://github.com/RHEnVision/provisioning-backend
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/RHEnVision/provisioning-frontend
+[submodule "sources-api-go"]
+	path = sources-api-go
+	url = https://github.com/RedHatInsights/sources-api-go
