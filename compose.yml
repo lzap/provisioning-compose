@@ -5,6 +5,7 @@ services:
     image: docker.io/postgres:13.1
     profiles:
       - backend
+      - backend-dev
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 2s
@@ -22,9 +23,10 @@ services:
   redis:
     image: docker.io/redis:latest
     profiles:
-      - "redis"
-      - "sources"
-      - "backend"
+      - redis
+      - sources
+      - backend
+      - backend-dev
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 2s
@@ -99,10 +101,29 @@ services:
       - zookeeper
   
   backend:
-    env_file:
-      - backend.env
     profiles:
       - backend
+    env_file:
+      - backend.env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      backend-db:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    image: quay.io/cloudservices/provisioning-backend:latest
+    ports:
+      - ${APP_PORT:-8000}:${APP_PORT:-8000}
+      - ${PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
+    volumes:
+      - ./backend/:/backend
+
+  backend-dev:
+    profiles:
+      - backend-dev
+    env_file:
+      - backend.env
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -132,9 +153,9 @@ services:
         condition: service_healthy
     entrypoint: ["go","run","./cmd/pbackend", "migrate"]
 
-  frontend:
+  frontend-dev:
     profiles:
-      - frontend
+      - frontend-dev
     environment:
       - PROV_API_HOST=backend
       - WATCHPACK_POLLING=true
@@ -146,7 +167,7 @@ services:
     ports: 
       - 1337:1337
     depends_on:
-    - backend
+      - backend-dev
     entrypoint: [npm,run,start]
 
   sources:
