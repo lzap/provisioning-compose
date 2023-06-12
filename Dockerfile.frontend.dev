@@ -1,0 +1,13 @@
+FROM registry.access.redhat.com/ubi8/nodejs-16
+USER 0
+WORKDIR /frontend
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+RUN npm run patch:hosts
+EXPOSE 1337
+USER 1001
+CMD [ "npm", "run", "dev" ]
