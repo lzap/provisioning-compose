@@ -7,3 +7,6 @@
 [submodule "sources-api-go"]
 	path = sources-api-go
 	url = https://github.com/RedHatInsights/sources-api-go
+[submodule "notifications"]
+	path = notifications
+	url = https://github.com/RedHatInsights/notifications-backend.git

@@ -81,7 +81,7 @@ services:
 
   init-kafka:
     profiles:
-      - "kafka"
+      - "kafka-init"
     image: quay.io/strimzi/kafka:latest-kafka-3.4.0
     entrypoint: [ '/bin/sh', '-c' ]
     command: |
@@ -157,7 +157,7 @@ services:
     profiles:
       - frontend-dev
     environment:
-      - PROV_API_HOST=backend
+      - PROV_API_HOST=backend-dev
       - WATCHPACK_POLLING=true
     build:
       context: ./frontend
@@ -168,7 +168,6 @@ services:
       - 1337:1337
     depends_on:
       - backend-dev
-    entrypoint: [npm,run,start]
 
   sources:
     profiles:
@@ -191,7 +190,7 @@ services:
     build:
       context: sources-api-go
     ports: 
-      - 8131:8131
+      - ${SOURCES_PORT:-8131}:${SOURCES_PORT:-8131}
     env_file:
       - sources.env
     depends_on:
@@ -218,3 +217,70 @@ services:
       - ./data/postgres/sources:/var/lib/postgresql/data
     expose:
       - 5432
+
+  notifications-db:
+    restart: on-failure
+    profiles:
+      - "notifications"
+    image: docker.io/postgres:13.1
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=notifications
+    volumes:
+      - ./data/postgres/notification:/var/lib/postgresql/data
+    expose:
+      - 5432
+
+  notifications-backend:
+    profiles:
+      - "notifications"
+    env_file:
+      - notifications-backend.env
+    healthcheck:
+    # No ping nor health endpoint
+      test: ["CMD", "curl", "-f", "http://localhost:8085/openapi.json"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+    build:
+      context: ./notifications
+      dockerfile: ../notifications_seed/Dockerfile.notifications-backend
+    ports:
+     - ${NOTIFICATIONS_PORT:-8085}:${NOTIFICATIONS_PORT:-8085}
+    depends_on:
+      notifications-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  notification-engine:
+    profiles:
+      - "notifications"
+    env_file:
+      - notifications-engine.env
+    build:
+      context: ./notifications
+      dockerfile: ../notifications_seed/Dockerfile.notifications-engine
+    expose:
+      - 8087
+    depends_on:
+      init-kafka:
+        condition: service_completed_successfully
+      notifications-db:
+        condition: service_healthy
+  notifications-seeder:
+    profiles:
+      - "notifications-init"
+    env_file:
+      - notifications-backend.env
+    build:
+      context: .
+      dockerfile: ./notifications_seed/Dockerfile.notifications.seed
+    depends_on:
+      notifications-backend:
+        condition: service_healthy

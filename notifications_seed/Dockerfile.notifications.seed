@@ -1,0 +1,7 @@
+FROM registry.redhat.io/rhel9/python-39
+USER 0
+WORKDIR /notification_seed
+COPY ./notifications_seed/notifications.seed.py .
+COPY ./notifications-backend/backend/helpers/helpers.py .
+RUN pip3 install requests
+ENTRYPOINT [ "python3", "notifications.seed.py" ]
