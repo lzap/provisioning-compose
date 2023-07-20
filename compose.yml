@@ -106,12 +106,14 @@ services:
     env_file:
       - backend.env
     depends_on:
-      migrate:
-        condition: service_completed_successfully
       backend-db:
         condition: service_healthy
       init-kafka:
         condition: service_completed_successfully
+    entrypoint:
+      - bash
+      - "-c"
+      - "/pbackend migrate && /pbackend api"
     image: quay.io/cloudservices/provisioning-backend:latest
     ports:
       - ${APP_PORT:-8000}:${APP_PORT:-8000}
@@ -125,8 +127,6 @@ services:
     env_file:
       - backend.env
     depends_on:
-      migrate:
-        condition: service_completed_successfully
       backend-db:
         condition: service_healthy
       init-kafka:
@@ -134,24 +134,15 @@ services:
     build:
       context: ./backend
       dockerfile: ../Dockerfile.backend.dev
+    entrypoint:
+      - bash
+      - "-c"
+      - "go run ./cmd/pbackend migrate && go run ./cmd/pbackend api"
     ports:
       - ${APP_PORT:-8000}:${APP_PORT:-8000}
       - ${PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
     volumes:
       - ./backend/:/backend
-
-  migrate: # This service is used to run migrations
-    profiles:
-      - migrate
-    build:
-      context: backend
-      dockerfile: ../Dockerfile.backend.dev
-    env_file:
-      - backend.env
-    depends_on:
-      backend-db:
-        condition: service_healthy
-    entrypoint: ["go","run","./cmd/pbackend", "migrate"]
 
   frontend-dev:
     profiles:
