@@ -1,5 +1,7 @@
+*.swp
 /data
-backend.env
-sources.env
-notifications-backend.env
-notifications-engine.env
+/backend.env
+/sources.env
+/notifications-backend.env
+/notifications-engine.env
+/sources_seed/sources.conf
