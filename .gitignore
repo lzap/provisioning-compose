@@ -1,5 +1,7 @@
 *.swp
 /data
+/.env
+/compose.env
 /backend.env
 /sources.env
 /notifications-backend.env

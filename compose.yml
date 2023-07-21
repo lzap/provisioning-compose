@@ -16,7 +16,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=provisioning
     volumes:
-      - ./data/postgres/backend:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/postgres/backend:/var/lib/postgresql/data
     expose:
       - 5432
     
@@ -35,7 +35,7 @@ services:
     expose:
       - 6379
     volumes:
-      - ./data/redis:/data
+      - ${DATA_DIR:-./data}/redis:/data
   
   zookeeper:
     profiles:
@@ -51,7 +51,7 @@ services:
     environment:
       LOG_DIR: /tmp/logs
     volumes:
-      - ./data/zookeeper:/tmp/logs
+      - ${DATA_DIR:-./data}/zookeeper:/tmp/logs
   
   kafka:
     profiles:
@@ -76,8 +76,10 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER:PLAINTEXT,LOCALHOST:PLAINTEXT
       KAFKA_LISTENERS: DOCKER://kafka:29092,LOCALHOST://localhost:9092
       KAFKA_ADVERTISED_LISTENERS: DOCKER://kafka:29092,LOCALHOST://localhost:9092
+    ports:
+      - ${EXPOSED_KAFKA_PORT:-9092}:9092
     volumes:
-      - ./data/kafka:/tmp/logs
+      - ${DATA_DIR:-./data}/kafka:/tmp/logs
 
   init-kafka:
     profiles:
@@ -116,8 +118,8 @@ services:
       - "/pbackend migrate && /pbackend api"
     image: quay.io/cloudservices/provisioning-backend:latest
     ports:
-      - ${APP_PORT:-8000}:${APP_PORT:-8000}
-      - ${PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
+      - ${EXPOSED_APP_PORT:-8000}:${APP_PORT:-8000}
+      - ${EXPOSED_PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
     volumes:
       - ./backend/:/backend
 
@@ -139,8 +141,8 @@ services:
       - "-c"
       - "go run ./cmd/pbackend migrate && go run ./cmd/pbackend api"
     ports:
-      - ${APP_PORT:-8000}:${APP_PORT:-8000}
-      - ${PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
+      - ${EXPOSED_APP_PORT:-8000}:${APP_PORT:-8000}
+      - ${EXPOSED_PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
     volumes:
       - ./backend/:/backend
 
@@ -156,7 +158,7 @@ services:
     volumes:
       - ./frontend/:/frontend
     ports: 
-      - 1337:1337
+      - ${EXPOSED_FRONTEND_DEV_PORT:-8008}:${FRONTEND_DEV_PORT:-8000}
     depends_on:
       - backend-dev
 
@@ -175,7 +177,7 @@ services:
       sources-db:
         condition: service_healthy
     ports:
-      - ${PORT:-8131}:${PORT:-8131}
+      - ${EXPOSED_SOURCES_PORT:-8131}:${PORT:-8131}
   
   sources-dev:
     profiles:
@@ -183,7 +185,7 @@ services:
     build:
       context: sources-api-go
     ports: 
-      - ${SOURCES_PORT:-8131}:${SOURCES_PORT:-8131}
+      - ${EXPOSED_SOURCES_DEV_PORT:-8131}:${SOURCES_PORT:-8131}
     env_file:
       - sources.env
     depends_on:
@@ -207,7 +209,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=sources_devel
     volumes:
-      - ./data/postgres/sources:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/pg/sources:/var/lib/postgresql/data
     expose:
       - 5432
 
@@ -226,7 +228,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=notifications
     volumes:
-      - ./data/postgres/notification:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/pg/notification:/var/lib/postgresql/data
     expose:
       - 5432
 
@@ -245,7 +247,7 @@ services:
       context: ./notifications
       dockerfile: ../notifications_seed/Dockerfile.notifications-backend
     ports:
-     - ${NOTIFICATIONS_PORT:-8085}:${NOTIFICATIONS_PORT:-8085}
+     - ${EXPOSED_NOTIFICATIONS_PORT:-8085}:${NOTIFICATIONS_PORT:-8085}
     depends_on:
       notifications-db:
         condition: service_healthy

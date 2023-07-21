@@ -41,6 +41,14 @@ pip3 install podman-compose
 podman-compose --profile sources --profile backend up
 ```
 
+The first start may fail as the initialization of the database takes too long and some services may give up, perform "down" and then "up" again and it will work. If you encounter permission issues, [troubleshoot SELinux](https://www.redhat.com/sysadmin/container-permission-denied-errors).
+
+To customize exposed ports, make a copy of `compose.example.env` file and run with `env-file` option:
+
+```
+podman-compose --env-file compose.example.env --profile kafka up
+```
+
 Make sure to use podman-compose 1.0.7 or newer for profiles feature, install development version if not available yet (as of Summer 2023).
 
 ### Seeding
