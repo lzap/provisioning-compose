@@ -16,7 +16,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=provisioning
     volumes:
-      - ${DATA_DIR:-./data}/postgres/backend:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/pg-backend:/var/lib/postgresql/data
     expose:
       - 5432
     
@@ -136,10 +136,6 @@ services:
     build:
       context: ./backend
       dockerfile: ../Dockerfile.backend.dev
-    entrypoint:
-      - bash
-      - "-c"
-      - "go run ./cmd/pbackend migrate && go run ./cmd/pbackend api"
     ports:
       - ${EXPOSED_APP_PORT:-8000}:${APP_PORT:-8000}
       - ${EXPOSED_PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
@@ -158,7 +154,7 @@ services:
     volumes:
       - ./frontend/:/frontend
     ports: 
-      - ${EXPOSED_FRONTEND_DEV_PORT:-8008}:${FRONTEND_DEV_PORT:-8000}
+      - ${EXPOSED_FRONTEND_DEV_PORT:-1337}:${FRONTEND_DEV_PORT:-1337}
     depends_on:
       - backend-dev
 
@@ -209,7 +205,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=sources_devel
     volumes:
-      - ${DATA_DIR:-./data}/pg/sources:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/pg-sources:/var/lib/postgresql/data
     expose:
       - 5432
 
@@ -228,7 +224,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=notifications
     volumes:
-      - ${DATA_DIR:-./data}/pg/notification:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/pg-notifications:/var/lib/postgresql/data
     expose:
       - 5432
 

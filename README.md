@@ -38,6 +38,7 @@ Alternatively, with podman, to start backend and sources:
 
 ```
 pip3 install podman-compose
+./prepare-podman.sh
 podman-compose --profile sources --profile backend up
 ```
 
@@ -88,19 +89,40 @@ Profiles:
 
 For example, in order to run local sources, kafka, local backend and frontend profiles, run
 
-```sh
-$ COMPOSE_PROFILES=frontend-dev,backend-dev,kafka,sources-dev docker compose up 
-```
+	COMPOSE_PROFILES=frontend-dev,backend-dev,kafka,sources-dev docker compose up 
 
  ### Notifications local setup
  See notifications [section](/notifications_seed/README.md)
 
 ### Live reloading for dev
+
 The backend container uses [CompileDaemon](github.com/githubnemo/CompileDaemon) for live reloading, it watches for changes, re-build and run the server when a change occurs. The frontend container uses webpack dev server hot reloading.
 
-### Compose's data
-Databases, kafka and redis data and logs are stored under `./data` folder. 
-When you use podman as non-root, postgres will change permissions of the directory to container user (random uid) and 600 permissions which makes the directory undeletable for the hosting user, workaround can be:
-```sh
-$ podman unshare chmod 777 data/*
-```
+### Rootless containers
+
+Some data is stored under `./data` folder. When you use podman as non-root, you might get into issue of not being able to delete the files. To fix this:
+
+	podman unshare rm -rf data/*
+
+Some containers run the service as root, for example:
+
+	podman run --rm docker.io/redis:latest id
+	uid=0(root) gid=0(root) groups=0(root)
+
+Root user in rootless podman is automatically mapped to your user. However, if the container is built in a way that it uses a regular user, this will not work. Example:
+
+	podman run --rm quay.io/strimzi/kafka:latest-kafka-3.4.0 id
+	uid=1001(kafka) gid=0(root) groups=0(root)
+
+In this case, directory needs to be created with the correct permission:
+
+	podman unshare chown -R 1001:1001 ./data/kafka ./data/zookeeper
+
+After podman starts, it will change the owner to 165536 + 1001.
+
+Special thanks to Robb Manes for his help with understanding of how rootless podman works. Some additional links:
+
+* https://www.redhat.com/sysadmin/container-permission-denied-errors
+* https://www.redhat.com/sysadmin/files-devices-podman
+* https://www.redhat.com/sysadmin/debug-rootless-podman-mounted-volumes
+* https://access.redhat.com/articles/5946151

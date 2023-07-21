@@ -10,4 +10,4 @@ COPY . .
 RUN go install github.com/githubnemo/CompileDaemon@latest
 RUN make prep GO=go
 
-ENTRYPOINT $HOME/go/bin/CompileDaemon -build="go build -buildvcs=false -o /build/pbackend ./cmd/pbackend" -command="/build/pbackend api"
+ENTRYPOINT ["bash", "-c", "go run ./cmd/pbackend migrate && $HOME/go/bin/CompileDaemon -build='go build -buildvcs=false -o /build/pbackend ./cmd/pbackend' -command='/build/pbackend api'"]
