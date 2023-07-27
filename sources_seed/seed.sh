@@ -4,6 +4,7 @@ source $BASEDIR/../sources.env
 [[ -f $BASEDIR/sources.conf ]] && source $BASEDIR/sources.conf
 
 IDENTITY=$($BASEDIR/identity_header.sh $ACCOUNT_ID $ORG_ID)
+echo "Identity: $IDENTITY"
 
 curl --location -g --request POST "http://localhost:$PORT/api/sources/v3.1/bulk_create" \
 --header "$IDENTITY" \

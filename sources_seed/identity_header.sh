@@ -11,12 +11,11 @@ esac
 
 JSON=$(
 cat<<EOF
-{"identity":{"type":"User","account_number":"$1","org_id":"$2","user":{"username":"user","email":"user@example.com","first_name":"User","last_name":"User"}}
+{"identity":{"type":"User","account_number":"$1","org_id":"$2","user":{"username":"user","email":"user@example.com","first_name":"User","last_name":"User"}}}
 EOF
 )
 
 if [ -n "${1}" ] && [ -n "${2}" ]; then
-  echo "$JSON"
   IDENTITY=$(echo "$JSON" | base64 $B64OPTS)
   echo "X-RH-Identity: $IDENTITY"
 fi
