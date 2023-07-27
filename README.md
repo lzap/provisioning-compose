@@ -94,6 +94,15 @@ For example, in order to run local sources, kafka, local backend and frontend pr
  ### Notifications local setup
  See notifications [section](/notifications_seed/README.md)
 
+### Connecting to Kafka
+
+Kafka advertises the connection (hostname and port) during session negotiation, therefore, it is necessary to change host resolution configuration in a way that "kafka" hostname resolves to the host that is hosting kafka containers. Typically:
+
+	cat /etc/hosts
+	127.0.0.1 kafka
+
+Change it accordingly if you running podman on a remote machine. The symptoms are that application (backend) is unable to connect to `kafka:9092` or `kafka:29092`.
+
 ### Live reloading for dev
 
 The backend container uses [CompileDaemon](github.com/githubnemo/CompileDaemon) for live reloading, it watches for changes, re-build and run the server when a change occurs. The frontend container uses webpack dev server hot reloading.
