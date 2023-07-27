@@ -84,7 +84,7 @@ services:
 
   init-kafka:
     profiles:
-      - "kafka-init"
+      - "kafka"
     image: quay.io/strimzi/kafka:latest-kafka-3.4.0
     entrypoint: [ '/bin/sh', '-c' ]
     command: |
