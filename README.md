@@ -31,7 +31,7 @@ $ cp backend.example.env backend.env
 In first use, to run all services locally altogether, including seeding and migration:
 
 ```sh
-$ COMPOSE_PROFILES=kafka,kafka-init,notifications,notifications-init,backend-dev,sources-dev,frontend-dev docker compose up
+$ COMPOSE_PROFILES=kafka,notifications,notifications-init,backend-dev,sources-dev,frontend-dev docker compose up
 ```
 
 Alternatively, with podman, to start backend and sources:
@@ -77,7 +77,6 @@ the provisioning backend, postgres and redis will run by default.
 
 Profiles:
 - kafka: run kafka with zookeeper, register topics
-- kafka-init: initialize required kafka's topics, run along side kafka at first use
 - sources: run latest sources service image from quay
 - sources-dev: run local sources with postgres db, on first use notice that you will need to run `/script/sources.seed.sh` for seeding your local sources data.
 - backend: migrate and run the provisioning backend, with postgres and redis from the official image
