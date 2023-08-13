@@ -276,3 +276,31 @@ services:
     depends_on:
       notifications-backend:
         condition: service_healthy
+  image-builder-frontend:
+    profiles:
+      - "image-builder-frontend"
+    build:
+      context: ./image-builder-frontend
+      dockerfile: ./distribution/Dockerfile
+    environment:
+      - LOCAL_API=provisioning:8003~http~frontend-static
+    depends_on:
+      - frontend-static
+    volumes:
+      - ./image-builder-frontend/:/usr/src/app
+    ports:
+      - ${EXPOSED_IMAGE_BUILDER_PORT:-1337}:${IMAGE_BUILDER_PORT:-1337}
+    entrypoint: ["npm", "run", "stage-beta"]
+  frontend-static:
+    profiles:
+      - "image-builder-frontend"
+    environment:
+      - BETA=true
+    build:
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend.dev
+    volumes:
+      - ./frontend/:/frontend
+    entrypoint: ["npm", "run", "start:federated"]
+    ports: 
+      - ${EXPOSED_FRONTEND_STATIC_PORT:-8003}:${FRONTEND_STATIC_PORT:-8003}

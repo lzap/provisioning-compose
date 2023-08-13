@@ -17,6 +17,7 @@ After cloning, the folder structure should be:
    │   ├── frontend
    │   ├── notifications
    │   ├── sources-api-go
+   │   ├── image-builder-frontend   
    └── 
 ```
 
@@ -84,6 +85,7 @@ Profiles:
 - frontend-dev: run local provisioning frontend
 - notifications: running local notification-backend service
 - notifications-init: seeds the required provisioning data, required for the first notifications use.
+- image-builder-frontend: run local frontend (federated mode) and local image-builder frontend
 
 
 For example, in order to run local sources, kafka, local backend and frontend profiles, run
@@ -93,6 +95,12 @@ For example, in order to run local sources, kafka, local backend and frontend pr
  ### Notifications local setup
  See notifications [section](/notifications_seed/README.md)
 
+### Image builder
+[Image builder](https://github.com/RedHatInsights/image-builder-frontend) consumes provisioning application as a federated module, for adding the launch wizard component.
+Following this dependency, a local dev environment containing both apps is required.
+The profile `image-builder-frontend` runs provisioning in a static federated mode, and image-builder-frontend
+in beta-stage, both with live-reload capabilities.
+
 ### Connecting to Kafka
 
 Kafka advertises the connection (hostname and port) during session negotiation, therefore, it is necessary to change host resolution configuration in a way that "kafka" hostname resolves to the host that is hosting kafka containers. Typically:
@@ -101,6 +109,7 @@ Kafka advertises the connection (hostname and port) during session negotiation, 
 	127.0.0.1 kafka
 
 Change it accordingly if you running podman on a remote machine. The symptoms are that application (backend) is unable to connect to `kafka:9092` or `kafka:29092`.
+
 
 ### Live reloading for dev
 

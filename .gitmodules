@@ -10,3 +10,6 @@
 [submodule "notifications"]
 	path = notifications
 	url = https://github.com/RedHatInsights/notifications-backend.git
+[submodule "image-builder-frontend"]
+	path = image-builder-frontend
+	url = https://github.com/RedHatInsights/image-builder-frontend.git
