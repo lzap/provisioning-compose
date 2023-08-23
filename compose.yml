@@ -7,7 +7,7 @@ services:
       - backend
       - backend-dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d provisioning -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -d provisioning -U postgres" ]
       interval: 2s
       timeout: 3s
       retries: 10
@@ -19,7 +19,7 @@ services:
       - ${DATA_DIR:-./data}/pg-backend:/var/lib/postgresql/data
     expose:
       - 5432
-    
+
   redis:
     image: docker.io/redis:latest
     profiles:
@@ -36,31 +36,35 @@ services:
       - 6379
     volumes:
       - ${DATA_DIR:-./data}/redis:/data
-  
+
   zookeeper:
     profiles:
       - "kafka"
     container_name: zookeeper
     image: quay.io/strimzi/kafka:latest-kafka-3.4.0
-    command: [
-      "sh", "-c",
-      "bin/zookeeper-server-start.sh config/zookeeper.properties"
-    ]
+    command:
+      [
+        "sh",
+        "-c",
+        "bin/zookeeper-server-start.sh config/zookeeper.properties"
+      ]
     expose:
       - "2181"
     environment:
       LOG_DIR: /tmp/logs
     volumes:
       - ${DATA_DIR:-./data}/zookeeper:/tmp/logs
-  
+
   kafka:
     profiles:
-     - "kafka"
+      - "kafka"
     image: quay.io/strimzi/kafka:latest-kafka-3.4.0
-    command: [
-      "sh", "-c",
-      "bin/kafka-server-start.sh config/server.properties  --override inter.broker.listener.name=$${KAFKA_INTER_BROKER_LISTENER_NAME} --override listener.security.protocol.map=$${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP} --override listeners=$${KAFKA_LISTENERS} --override advertised.listeners=$${KAFKA_ADVERTISED_LISTENERS} --override zookeeper.connect=$${KAFKA_ZOOKEEPER_CONNECT}"
-    ]
+    command:
+      [
+        "sh",
+        "-c",
+        "bin/kafka-server-start.sh config/server.properties  --override inter.broker.listener.name=$${KAFKA_INTER_BROKER_LISTENER_NAME} --override listener.security.protocol.map=$${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP} --override listeners=$${KAFKA_LISTENERS} --override advertised.listeners=$${KAFKA_ADVERTISED_LISTENERS} --override zookeeper.connect=$${KAFKA_ZOOKEEPER_CONNECT}"
+      ]
     expose:
       - 9092
       - 29092
@@ -102,7 +106,7 @@ services:
     depends_on:
       - kafka
       - zookeeper
-  
+
   backend:
     profiles:
       - backend
@@ -143,6 +147,34 @@ services:
     volumes:
       - ./backend/:/backend
 
+  statuser-dev:
+    env_file:
+      - backend.env
+    depends_on:
+      - backend-dev
+      - kafka
+    build:
+      context: ./backend
+      dockerfile: ../Dockerfile.statuser.dev
+    ports:
+      - ${EXPOSED_PROMETHEUS_PORT:-9005}:${PROMETHEUS_PORT:-9000}
+    volumes:
+      - ./backend/:/statuser
+
+  worker-dev:
+    env_file:
+      - backend.env
+    depends_on:
+      - backend-dev
+      - redis
+    build:
+      context: ./backend
+      dockerfile: ../Dockerfile.worker.dev
+    ports:
+      - ${EXPOSED_PROMETHEUS_PORT:-9010}:${PROMETHEUS_PORT:-9000}
+    volumes:
+      - ./backend/:/worker
+
   frontend-dev:
     profiles:
       - frontend-dev
@@ -154,7 +186,7 @@ services:
       dockerfile: ../Dockerfile.frontend.dev
     volumes:
       - ./frontend/:/frontend
-    ports: 
+    ports:
       - ${EXPOSED_FRONTEND_DEV_PORT:-1337}:${FRONTEND_DEV_PORT:-1337}
     depends_on:
       - backend-dev
@@ -175,13 +207,13 @@ services:
         condition: service_healthy
     ports:
       - ${EXPOSED_SOURCES_PORT:-8131}:${PORT:-8131}
-  
+
   sources-dev:
     profiles:
       - sources-dev
     build:
       context: sources-api-go
-    ports: 
+    ports:
       - ${EXPOSED_SOURCES_DEV_PORT:-8131}:${SOURCES_PORT:-8131}
     env_file:
       - sources.env
@@ -197,7 +229,7 @@ services:
       - sources-dev
     image: docker.io/postgres:13.1
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
       interval: 2s
       timeout: 2s
       retries: 10
@@ -216,7 +248,7 @@ services:
       - "notifications"
     image: docker.io/postgres:13.1
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
       interval: 2s
       timeout: 2s
       retries: 10
@@ -235,8 +267,14 @@ services:
     env_file:
       - notifications-backend.env
     healthcheck:
-    # No ping nor health endpoint
-      test: ["CMD", "curl", "-f", "http://localhost:8085/openapi.json"]
+      # No ping nor health endpoint
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8085/openapi.json"
+        ]
       interval: 20s
       timeout: 10s
       retries: 3
@@ -244,7 +282,7 @@ services:
       context: ./notifications
       dockerfile: ../notifications_seed/Dockerfile.notifications-backend
     ports:
-     - ${EXPOSED_NOTIFICATIONS_PORT:-8085}:${NOTIFICATIONS_PORT:-8085}
+      - ${EXPOSED_NOTIFICATIONS_PORT:-8085}:${NOTIFICATIONS_PORT:-8085}
     depends_on:
       notifications-db:
         condition: service_healthy
@@ -290,7 +328,7 @@ services:
       - ./image-builder-frontend/:/usr/src/app
     ports:
       - ${EXPOSED_IMAGE_BUILDER_PORT:-1337}:${IMAGE_BUILDER_PORT:-1337}
-    entrypoint: ["npm", "run", "stage-beta"]
+    entrypoint: [ "npm", "run", "stage-beta" ]
   frontend-static:
     profiles:
       - "image-builder-frontend"
@@ -301,6 +339,6 @@ services:
       dockerfile: ../Dockerfile.frontend.dev
     volumes:
       - ./frontend/:/frontend
-    entrypoint: ["npm", "run", "start:federated"]
-    ports: 
+    entrypoint: [ "npm", "run", "start:federated" ]
+    ports:
       - ${EXPOSED_FRONTEND_STATIC_PORT:-8003}:${FRONTEND_STATIC_PORT:-8003}
