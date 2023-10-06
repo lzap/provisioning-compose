@@ -1,4 +1,13 @@
 version: '3.7'
+
+volumes:
+  pg-backend:
+  pg-sources:
+  pg-notifications:
+  redis:
+  zookeeper:
+  kafka:
+
 services:
   backend-db:
     restart: on-failure
@@ -7,7 +16,7 @@ services:
       - backend
       - backend-dev
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d provisioning -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -d provisioning -U postgres && sleep 5" ]
       interval: 2s
       timeout: 3s
       retries: 10
@@ -16,7 +25,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=provisioning
     volumes:
-      - ${DATA_DIR:-./data}/pg-backend:/var/lib/postgresql/data
+      - pg-backend:/var/lib/postgresql/data
     expose:
       - 5432
 
@@ -35,12 +44,11 @@ services:
     expose:
       - 6379
     volumes:
-      - ${DATA_DIR:-./data}/redis:/data
+      - redis:/data
 
   zookeeper:
     profiles:
-      - "kafka"
-    container_name: zookeeper
+      - kafka
     image: quay.io/strimzi/kafka:latest-kafka-3.4.0
     command:
       [
@@ -53,11 +61,11 @@ services:
     environment:
       LOG_DIR: /tmp/logs
     volumes:
-      - ${DATA_DIR:-./data}/zookeeper:/tmp/logs
+      - zookeeper:/tmp/logs
 
   kafka:
     profiles:
-      - "kafka"
+      - kafka
     image: quay.io/strimzi/kafka:latest-kafka-3.4.0
     command:
       [
@@ -84,11 +92,11 @@ services:
       - ${EXPOSED_KAFKA_PORT:-9092}:29092
       - ${EXPOSED_KAFKA_PORT2:-29092}:29092
     volumes:
-      - ${DATA_DIR:-./data}/kafka:/tmp/logs
+      - kafka:/tmp/logs
 
   init-kafka:
     profiles:
-      - "kafka"
+      - kafka
     image: quay.io/strimzi/kafka:latest-kafka-3.4.0
     entrypoint: [ '/bin/sh', '-c' ]
     command: |
@@ -125,8 +133,6 @@ services:
     ports:
       - ${EXPOSED_APP_PORT:-8000}:${APP_PORT:-8000}
       - ${EXPOSED_PROMETHEUS_PORT:-9000}:${PROMETHEUS_PORT:-9000}
-    volumes:
-      - ./backend/:/backend
 
   backend-dev:
     profiles:
@@ -148,6 +154,8 @@ services:
       - ./backend/:/backend
 
   statuser-dev:
+    profiles:
+      - statuser-dev
     env_file:
       - backend.env
     depends_on:
@@ -162,6 +170,8 @@ services:
       - ./backend/:/statuser
 
   worker-dev:
+    profiles:
+      - worker-dev
     env_file:
       - backend.env
     depends_on:
@@ -193,8 +203,7 @@ services:
 
   sources:
     profiles:
-      - "sources"
-    container_name: sources
+      - sources
     image: quay.io/cloudservices/sources-api-go:latest
     env_file:
       - sources.env
@@ -238,14 +247,14 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=sources_devel
     volumes:
-      - ${DATA_DIR:-./data}/pg-sources:/var/lib/postgresql/data
+      - pg-sources:/var/lib/postgresql/data
     expose:
       - 5432
 
   notifications-db:
     restart: on-failure
     profiles:
-      - "notifications"
+      - notifications
     image: docker.io/postgres:13.1
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "postgres" ]
@@ -257,13 +266,13 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=notifications
     volumes:
-      - ${DATA_DIR:-./data}/pg-notifications:/var/lib/postgresql/data
+      - pg-notifications:/var/lib/postgresql/data
     expose:
       - 5432
 
   notifications-backend:
     profiles:
-      - "notifications"
+      - notifications
     env_file:
       - notifications-backend.env
     healthcheck:
@@ -288,9 +297,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
   notification-engine:
     profiles:
-      - "notifications"
+      - notifications
     env_file:
       - notifications-engine.env
     build:
@@ -303,9 +313,10 @@ services:
         condition: service_completed_successfully
       notifications-db:
         condition: service_healthy
+
   notifications-seeder:
     profiles:
-      - "notifications-init"
+      - notifications-init
     env_file:
       - notifications-backend.env
     build:
@@ -314,9 +325,10 @@ services:
     depends_on:
       notifications-backend:
         condition: service_healthy
+
   image-builder-frontend:
     profiles:
-      - "image-builder-frontend"
+      - image-builder-frontend
     build:
       context: ./image-builder-frontend
       dockerfile: ./distribution/Dockerfile
@@ -329,9 +341,10 @@ services:
     ports:
       - ${EXPOSED_IMAGE_BUILDER_PORT:-1337}:${IMAGE_BUILDER_PORT:-1337}
     entrypoint: [ "npm", "run", "stage-beta" ]
+
   frontend-static:
     profiles:
-      - "image-builder-frontend"
+      - image-builder-frontend
     environment:
       - BETA=true
     build:

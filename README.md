@@ -115,6 +115,13 @@ Change it accordingly if you running podman on a remote machine. The symptoms ar
 
 The backend container uses [CompileDaemon](github.com/githubnemo/CompileDaemon) for live reloading, it watches for changes, re-build and run the server when a change occurs. The frontend container uses webpack dev server hot reloading.
 
+### Cleaning up
+
+Compose creates several volumes, to delete them (replace `docker` with `podman`, it works the same way):
+
+	docker volume ls
+	docker volume remove -a -f
+
 ### Rootless containers
 
 Some data is stored under `./data` folder. When you use podman as non-root, you might get into issue of not being able to delete the files. To fix this:
