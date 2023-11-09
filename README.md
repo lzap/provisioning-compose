@@ -38,8 +38,7 @@ $ COMPOSE_PROFILES=kafka,notifications,notifications-init,backend-dev,sources-de
 Alternatively, with podman, to start backend and sources:
 
 ```
-pip3 install podman-compose
-./prepare-podman.sh
+pip3 install https://github.com/containers/podman-compose/archive/devel.tar.gz
 podman-compose --profile sources --profile backend up
 ```
 
@@ -110,23 +109,26 @@ Kafka advertises the connection (hostname and port) during session negotiation, 
 
 Change it accordingly if you running podman on a remote machine. The symptoms are that application (backend) is unable to connect to `kafka:9092` or `kafka:29092`.
 
-
 ### Live reloading for dev
 
 The backend container uses [CompileDaemon](github.com/githubnemo/CompileDaemon) for live reloading, it watches for changes, re-build and run the server when a change occurs. The frontend container uses webpack dev server hot reloading.
 
-### Cleaning up
+### Cleaning up
 
 Compose creates several volumes, to delete them (replace `docker` with `podman`, it works the same way):
 
 	docker volume ls
 	docker volume remove -a -f
 
+Alternatively, to erase everything:
+
+    podman system reset
+
 ### Rootless containers
 
-Some data is stored under `./data` folder. When you use podman as non-root, you might get into issue of not being able to delete the files. To fix this:
+Some files (for `-dev` containers) are mounted from the host machine. When you use podman as non-root, you might get into issue of not being able to delete the files. To fix this:
 
-	podman unshare rm -rf data/*
+	podman unshare rm -rf folder/
 
 Some containers run the service as root, for example:
 
@@ -137,10 +139,6 @@ Root user in rootless podman is automatically mapped to your user. However, if t
 
 	podman run --rm quay.io/strimzi/kafka:latest-kafka-3.4.0 id
 	uid=1001(kafka) gid=0(root) groups=0(root)
-
-In this case, directory needs to be created with the correct permission:
-
-	podman unshare chown -R 1001:1001 ./data/kafka ./data/zookeeper
 
 After podman starts, it will change the owner to 165536 + 1001.
 
